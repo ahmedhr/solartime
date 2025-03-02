@@ -149,20 +149,5 @@
         android:text="Lat: 0.0000, Lon: 0.0000"
         android:textColor="@android:color/black"
         android:textSize="18sp" />
-        
-    <!-- Debug Button -->
-    <Button
-        android:id="@+id/debugButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentTop="true"
-        android:layout_margin="8dp"
-        android:text="Debug"
-        android:textSize="12sp"
-        android:alpha="0.7"
-        android:background="@android:color/darker_gray"
-        android:textColor="@android:color/white"
-        android:padding="8dp" />
 
 </RelativeLayout>
