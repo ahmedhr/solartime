@@ -17,9 +17,11 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -63,7 +65,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Initialize Places API
         if (!Places.isInitialized()) {
-            Places.initialize(applicationContext, "AIzaSyDLcq3aNTfKAud-ZAi-Ajqg6Wp3-aNzaI4") // Replace with your API key
+            Places.initialize(
+                applicationContext,
+                "AIzaSyDLcq3aNTfKAud-ZAi-Ajqg6Wp3-aNzaI4"
+            ) // Replace with your API key
         }
         placesClient = Places.createClient(this)
 
@@ -90,6 +95,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             recyclerViewPredictions.visibility = View.GONE // Hide after selection
         }
         recyclerViewPredictions.adapter = predictionAdapter
+        
+        // Setup info icon click listener
+        val infoIcon = findViewById<ImageView>(R.id.infoIcon)
+        infoIcon.setOnClickListener {
+            showSolarTimeInfoDialog()
+        }
     }
 
     private fun initializeMap() {
@@ -200,12 +211,20 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
             map.isMyLocationEnabled = true
             map.uiSettings.isMyLocationButtonEnabled = true
             map.uiSettings.isCompassEnabled = true
         } else {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                1
+            )
         }
 
         val initialLocation = LatLng(0.0, 0.0)
@@ -228,34 +247,55 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val latitude = latLng.latitude
         val longitude = latLng.longitude
 
-        latitudeLongitudeTextView.text = String.format(Locale.getDefault(), "Lat: %.4f, Lon: %.4f", latitude, longitude)
+        latitudeLongitudeTextView.text =
+            String.format(Locale.getDefault(), "Lat: %.4f, Lon: %.4f", latitude, longitude)
 
         val calendar = Calendar.getInstance()
-        
+
         // Use the more accurate solar time calculation from SolarTimeCalculator
-        val (solarHours, solarMinutes, solarSeconds) = SolarTimeCalculator.calculateSolarTime(latLng, calendar)
+        val (solarHours, solarMinutes, solarSeconds) = SolarTimeCalculator.calculateSolarTime(
+            latLng,
+            calendar
+        )
 
         solarTimeTextView.visibility = View.VISIBLE
         currentTimeTextView.visibility = View.VISIBLE
 
-        solarTimeTextView.text = String.format(Locale.getDefault(), "Solar Time: %02d:%02d:%02d", solarHours, solarMinutes, solarSeconds)
-        currentTimeTextView.text = String.format(Locale.getDefault(), "Current Time: %02d:%02d:%02d",
-            calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND))
-            
+        solarTimeTextView.text = String.format(
+            Locale.getDefault(),
+            "Solar Time: %02d:%02d:%02d",
+            solarHours,
+            solarMinutes,
+            solarSeconds
+        )
+        currentTimeTextView.text = String.format(
+            Locale.getDefault(),
+            "Current Time: %02d:%02d:%02d",
+            calendar.get(Calendar.HOUR_OF_DAY),
+            calendar.get(Calendar.MINUTE),
+            calendar.get(Calendar.SECOND)
+        )
+
         // Calculate and display sunrise and sunset times
         calculateAndDisplaySunriseSunset(latLng)
     }
-    
+
     private fun calculateAndDisplaySunriseSunset(latLng: LatLng) {
         val calendar = Calendar.getInstance()
         val (sunrise, sunset) = SunCalculator.calculateSunriseSunset(latLng, calendar)
-        
+
         // Format and display the times
         val sunriseTime = SunCalculator.formatTime(sunrise)
         val sunsetTime = SunCalculator.formatTime(sunset)
-        
-        sunriseTextView.text = "Sunrise: $sunriseTime"
-        sunsetTextView.text = "Sunset: $sunsetTime"
+
+        sunriseTextView.text = buildString {
+            append("Sunrise: ")
+            append(sunriseTime)
+        }
+        sunsetTextView.text = buildString {
+            append("Sunset: ")
+            append(sunsetTime)
+        }
     }
 
     private fun checkAndEnableLocation() {
@@ -267,10 +307,18 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == 1 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
                 map.isMyLocationEnabled = true
                 map.uiSettings.isMyLocationButtonEnabled = true
             }
@@ -291,6 +339,35 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             startActivity(intent)
         }
     }
+
+    /**
+     * Show a dialog explaining solar time calculation
+     */
+    private fun showSolarTimeInfoDialog() {
+        val dialogBuilder = AlertDialog.Builder(this)
+        dialogBuilder.setTitle("Solar Time Calculation")
+        
+        val message = """
+            Solar time is based on the sun's position in the sky and varies by location.
+            
+            The calculation includes:
+            • Longitude adjustment (4 minutes per degree from reference meridian)
+            • Equation of Time (EoT) - adjusts for Earth's elliptical orbit and axial tilt
+            • Time zone offset - converts from UTC to local time
+            • Atmospheric refraction - tiny adjustment for atmospheric effects
+            
+            Formula: 
+            Standard time + longitude adjustment + EoT + time zone adjustment
+            
+            Solar noon occurs when the sun reaches its highest point in the sky.
+        """.trimIndent()
+        
+        dialogBuilder.setMessage(message)
+        dialogBuilder.setPositiveButton("Got it") { dialog, _ -> dialog.dismiss() }
+        
+        val dialog = dialogBuilder.create()
+        dialog.show()
+    }
 }
 
 class PredictionAdapter(
@@ -310,7 +387,8 @@ class PredictionAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_prediction, parent, false)
+        val view =
+            LayoutInflater.from(parent.context).inflate(R.layout.item_prediction, parent, false)
         return ViewHolder(view)
     }
 

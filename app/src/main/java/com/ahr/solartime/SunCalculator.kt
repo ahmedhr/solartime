@@ -1,138 +1,130 @@
 package com.ahr.solartime
 
 import com.google.android.gms.maps.model.LatLng
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.*
 
 /**
- * Calculator for sun-related times and positions.
- * Calculates sunrise, sunset, and other solar position data.
+ * Calculator for sunrise, sunset, and other sun-related astronomical data.
  */
-class SunCalculator {
-
-    companion object {
-        // Constants for calculations
-        private const val TO_RAD = PI / 180.0
-        private const val TO_DEG = 180.0 / PI
-        private const val JULIAN_DATE_2000 = 2451545.0
+object SunCalculator {
+    private const val TO_RAD = Math.PI / 180.0
+    private const val TO_DEG = 180.0 / Math.PI
+    
+    // Standard sun altitude for sunrise/sunset (-0.833° accounts for refraction and sun's diameter)
+    private const val SUN_ALTITUDE_SUNRISE_SUNSET = -0.833
+    
+    /**
+     * Calculate sunrise and sunset times for a location.
+     * Returns a pair of Calendar objects (sunrise, sunset) in local time.
+     */
+    fun calculateSunriseSunset(latLng: LatLng, date: Calendar = Calendar.getInstance()): Pair<Calendar?, Calendar?> {
+        val latitude = latLng.latitude
+        val longitude = latLng.longitude
         
-        /**
-         * Calculate sunrise and sunset times for a given location and date.
-         * 
-         * @param latLng The latitude and longitude of the location
-         * @param calendar The date for which to calculate (time component is ignored)
-         * @param zenith The solar zenith angle used to define sunrise/sunset
-         *        - Official: 90.833° (sun's upper edge touches the horizon)
-         *        - Civil: 96° (civil twilight)
-         *        - Nautical: 102° (nautical twilight)
-         *        - Astronomical: 108° (astronomical twilight)
-         * @return Pair of sunrise and sunset times as Calendar objects, or null if sun doesn't rise/set
-         */
-        fun calculateSunriseSunset(
-            latLng: LatLng, 
-            calendar: Calendar = Calendar.getInstance(),
-            zenith: Double = 90.833
-        ): Pair<Calendar?, Calendar?> {
-            
-            val latitude = latLng.latitude
-            val longitude = latLng.longitude
-            
-            // Calculate day of year
-            val dayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
-            
-            // Convert latitude and longitude to radians
-            val latRad = latitude * TO_RAD
-            
-            // Calculate solar declination
-            val declination = calculateDeclination(dayOfYear)
-            
-            // Calculate hour angle
-            val cosHourAngle = (cos(zenith * TO_RAD) - sin(latRad) * sin(declination)) / 
-                              (cos(latRad) * cos(declination))
-            
-            // Check if the sun never rises/sets at this location on this day
-            if (cosHourAngle > 1.0) {
-                // Sun never rises
-                return Pair(null, null)
-            } else if (cosHourAngle < -1.0) {
-                // Sun never sets
-                return Pair(null, null)
-            }
-            
-            // Calculate hour angle in degrees
-            val hourAngle = acos(cosHourAngle) * TO_DEG
-            
-            // Calculate sunrise and sunset times in hours (local solar time)
-            val sunriseHour = (360.0 - hourAngle) / 15.0
-            val sunsetHour = (hourAngle) / 15.0
-            
-            // Adjust for longitude and equation of time
-            val eot = calculateEquationOfTime(dayOfYear) / 60.0 // Convert to hours
-            
-            // Adjust for timezone
-            val timeZoneOffset = calendar.timeZone.getOffset(calendar.timeInMillis) / 3600000.0 // Convert ms to hours
-            val longitudeHour = longitude / 15.0
-            
-            // Calculate sunrise and sunset in UTC hours
-            val sunriseUtc = sunriseHour - longitudeHour - eot
-            val sunsetUtc = sunsetHour + longitudeHour - eot
-            
-            // Convert to local time
-            val sunriseLocal = sunriseUtc + timeZoneOffset
-            val sunsetLocal = sunsetUtc + timeZoneOffset
-            
-            // Create Calendar objects for sunrise and sunset
-            val sunriseCal = (calendar.clone() as Calendar).apply {
-                set(Calendar.HOUR_OF_DAY, sunriseLocal.toInt())
-                set(Calendar.MINUTE, ((sunriseLocal % 1) * 60).toInt())
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-            
-            val sunsetCal = (calendar.clone() as Calendar).apply {
-                set(Calendar.HOUR_OF_DAY, sunsetLocal.toInt())
-                set(Calendar.MINUTE, ((sunsetLocal % 1) * 60).toInt())
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-            
-            return Pair(sunriseCal, sunsetCal)
+        // Make a copy of the calendar to avoid modifying the original
+        val cal = date.clone() as Calendar
+        cal.set(Calendar.HOUR_OF_DAY, 12) // Set to noon to avoid DST transition issues
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        
+        // Get day of year
+        val dayOfYear = cal.get(Calendar.DAY_OF_YEAR)
+        
+        // Calculate solar declination (approx)
+        val declination = 23.45 * sin(TO_RAD * 0.9863 * (dayOfYear - 81))
+        val declinationRad = declination * TO_RAD
+        
+        // Convert latitude to radians
+        val latitudeRad = latitude * TO_RAD
+        
+        // Calculate hour angle for sunrise/sunset
+        // cos(hour angle) = (sin(sun altitude) - sin(latitude) * sin(declination)) / (cos(latitude) * cos(declination))
+        val cosHourAngle = (sin(TO_RAD * SUN_ALTITUDE_SUNRISE_SUNSET) - 
+                           sin(latitudeRad) * sin(declinationRad)) / 
+                           (cos(latitudeRad) * cos(declinationRad))
+        
+        // Check if sun never rises/sets at this location on this day
+        if (cosHourAngle > 1.0) {
+            // Sun never rises
+            return Pair(null, null)
+        } else if (cosHourAngle < -1.0) {
+            // Sun never sets
+            return Pair(null, null)
         }
         
-        /**
-         * Calculate solar declination for a given day of year.
-         * This is the angle between the rays of the sun and the plane of the Earth's equator.
-         */
-        private fun calculateDeclination(dayOfYear: Int): Double {
-            // Approximate formula for declination
-            val angle = 0.9863 * (dayOfYear - 81) * TO_RAD
-            return 23.45 * sin(angle) * TO_RAD
-        }
+        // Calculate hour angle in degrees
+        val hourAngle = acos(cosHourAngle) * TO_DEG
         
-        /**
-         * Calculate the equation of time for a given day of year.
-         * Returns the result in minutes.
-         */
-        private fun calculateEquationOfTime(dayOfYear: Int): Double {
-            // Convert day of year to radians for the formula
-            val b = 2 * PI * (dayOfYear - 81) / 365.0
-            
-            // Spencer's formula for the Equation of Time (in minutes)
-            return 9.87 * sin(2 * b) - 7.53 * cos(b) - 1.5 * sin(b)
-        }
+        // Calculate equation of time correction in minutes
+        val b = 2 * Math.PI * (dayOfYear - 81) / 365.0
+        val eot = 9.87 * sin(2 * b) - 7.53 * cos(b) - 1.5 * sin(b)  // in minutes
         
-        /**
-         * Format a Calendar time as a string in HH:MM format.
-         * Returns "N/A" if the Calendar is null.
-         */
-        fun formatTime(calendar: Calendar?): String {
-            if (calendar == null) return "N/A"
-            return String.format(
-                Locale.getDefault(),
-                "%02d:%02d",
-                calendar.get(Calendar.HOUR_OF_DAY),
-                calendar.get(Calendar.MINUTE)
-            )
-        }
+        // Get solar noon in minutes from local midnight
+        val solarNoonMinutes = (720 - 4 * longitude - eot) // in minutes from midnight UTC
+        
+        // Convert to sunrise and sunset in minutes from midnight UTC
+        val sunriseMinutes = solarNoonMinutes - 4 * hourAngle
+        val sunsetMinutes = solarNoonMinutes + 4 * hourAngle
+        
+        // Create sunrise and sunset calendars in local time zone
+        val sunrise = cal.clone() as Calendar
+        val sunset = cal.clone() as Calendar
+        
+        // Convert minutes to hours and minutes, ensuring we stay within the day
+        val sunriseHours = ((sunriseMinutes / 60.0) % 24).toInt()
+        val sunriseMinutesOnly = (sunriseMinutes % 60.0).toInt()
+        
+        val sunsetHours = ((sunsetMinutes / 60.0) % 24).toInt()
+        val sunsetMinutesOnly = (sunsetMinutes % 60.0).toInt()
+        
+        // Set the calculated hours and minutes (UTC time)
+        sunrise.set(Calendar.HOUR_OF_DAY, sunriseHours)
+        sunrise.set(Calendar.MINUTE, sunriseMinutesOnly)
+        
+        sunset.set(Calendar.HOUR_OF_DAY, sunsetHours)
+        sunset.set(Calendar.MINUTE, sunsetMinutesOnly)
+        
+        // Convert to local time zone from UTC
+        // No need to manually adjust for time zone - just use the right time zone
+        val timeZoneOffset = cal.timeZone.getOffset(cal.timeInMillis) / (60 * 1000) // in minutes
+        sunrise.add(Calendar.MINUTE, timeZoneOffset)
+        sunset.add(Calendar.MINUTE, timeZoneOffset)
+        
+        return Pair(sunrise, sunset)
+    }
+    
+    /**
+     * Format a Calendar time as HH:MM string
+     */
+    fun formatTime(time: Calendar?): String {
+        if (time == null) return "N/A"
+        val format = SimpleDateFormat("HH:mm", Locale.getDefault())
+        return format.format(time.time)
+    }
+    
+    /**
+     * Calculate day length in hours and minutes
+     */
+    fun getDayLength(sunrise: Calendar?, sunset: Calendar?): String {
+        if (sunrise == null || sunset == null) return "N/A"
+        
+        val dayLengthMillis = sunset.timeInMillis - sunrise.timeInMillis
+        val dayLengthHours = dayLengthMillis / (1000 * 60 * 60)
+        val dayLengthMinutes = (dayLengthMillis / (1000 * 60)) % 60
+        
+        return String.format("%dh %02dm", dayLengthHours, dayLengthMinutes)
+    }
+    
+    /**
+     * Calculate solar noon as the midpoint between sunrise and sunset
+     */
+    fun calculateSolarNoon(sunrise: Calendar?, sunset: Calendar?): Calendar? {
+        if (sunrise == null || sunset == null) return null
+        
+        val noonMillis = sunrise.timeInMillis + (sunset.timeInMillis - sunrise.timeInMillis) / 2
+        return Calendar.getInstance().apply { timeInMillis = noonMillis }
     }
 } 

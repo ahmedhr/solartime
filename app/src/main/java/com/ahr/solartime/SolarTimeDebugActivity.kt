@@ -3,12 +3,14 @@ package com.ahr.solartime
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.maps.model.LatLng
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.*
 
 /**
  * Debug activity to compare different solar time calculation methods.
@@ -24,6 +26,12 @@ class SolarTimeDebugActivity : AppCompatActivity() {
     private lateinit var dateTextView: TextView
     private lateinit var sunriseTextView: TextView
     private lateinit var sunsetTextView: TextView
+    private lateinit var dayLengthTextView: TextView
+    private lateinit var solarNoonTextView: TextView
+    private lateinit var eotValueTextView: TextView
+    private lateinit var componentsTextView: TextView
+    private lateinit var showDetailsButton: Button
+    private lateinit var detailsContainer: View
     
     private lateinit var eastButton: Button
     private lateinit var westButton: Button
@@ -54,6 +62,29 @@ class SolarTimeDebugActivity : AppCompatActivity() {
         dateTextView = findViewById(R.id.dateTextView)
         sunriseTextView = findViewById(R.id.sunriseTextView)
         sunsetTextView = findViewById(R.id.sunsetTextView)
+        
+        try {
+            // These may be added in layout later
+            dayLengthTextView = findViewById(R.id.dayLengthTextView)
+            solarNoonTextView = findViewById(R.id.solarNoonTextView)
+            eotValueTextView = findViewById(R.id.eotValueTextView)
+            componentsTextView = findViewById(R.id.componentsTextView)
+            detailsContainer = findViewById(R.id.detailsContainer)
+            showDetailsButton = findViewById(R.id.showDetailsButton)
+            
+            // Setup details toggle
+            showDetailsButton.setOnClickListener {
+                if (detailsContainer.visibility == View.VISIBLE) {
+                    detailsContainer.visibility = View.GONE
+                    showDetailsButton.text = "Show Advanced Details"
+                } else {
+                    detailsContainer.visibility = View.VISIBLE
+                    showDetailsButton.text = "Hide Advanced Details"
+                }
+            }
+        } catch (e: Exception) {
+            // If these views don't exist yet, we'll skip them
+        }
         
         eastButton = findViewById(R.id.eastButton)
         westButton = findViewById(R.id.westButton)
@@ -143,8 +174,97 @@ class SolarTimeDebugActivity : AppCompatActivity() {
         sunriseTextView.text = "Sunrise: ${SunCalculator.formatTime(sunrise)}"
         sunsetTextView.text = "Sunset: ${SunCalculator.formatTime(sunset)}"
         
+        // Try to update advanced details if available
+        try {
+            // Calculate day length (if both sunrise and sunset exist)
+            if (sunrise != null && sunset != null) {
+                val dayLengthMillis = sunset.timeInMillis - sunrise.timeInMillis
+                val dayLengthHours = dayLengthMillis / (1000 * 60 * 60)
+                val dayLengthMinutes = (dayLengthMillis / (1000 * 60)) % 60
+                dayLengthTextView.text = String.format(
+                    "Day Length: %dh %dm",
+                    dayLengthHours, dayLengthMinutes
+                )
+                
+                // Calculate solar noon (midpoint between sunrise and sunset)
+                val solarNoonMillis = sunrise.timeInMillis + (dayLengthMillis / 2)
+                val solarNoonCal = Calendar.getInstance().apply { timeInMillis = solarNoonMillis }
+                solarNoonTextView.text = String.format(
+                    "Solar Noon: %02d:%02d",
+                    solarNoonCal.get(Calendar.HOUR_OF_DAY),
+                    solarNoonCal.get(Calendar.MINUTE)
+                )
+            } else {
+                dayLengthTextView.text = "Day Length: N/A"
+                solarNoonTextView.text = "Solar Noon: N/A"
+            }
+            
+            // Calculate Equation of Time value in minutes
+            val dayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
+            val b = 2 * PI * (dayOfYear - 81) / 365.0
+            val eot = 9.87 * sin(2 * b) - 7.53 * cos(b) - 1.5 * sin(b)
+            eotValueTextView.text = String.format("EoT Value: %.2f minutes", eot)
+            
+            // Add calculation components to debug information
+            val longitude = currentLocation.longitude
+            
+            // Create a UTC calendar to show UTC time
+            val utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+            utcCalendar.timeInMillis = calendar.timeInMillis
+            
+            val utcTimeInSeconds = utcCalendar.get(Calendar.HOUR_OF_DAY) * 3600 +
+                                   utcCalendar.get(Calendar.MINUTE) * 60 +
+                                   utcCalendar.get(Calendar.SECOND)
+                                   
+            val longitudeOffsetInSeconds = (longitude * 240.0)
+            val eotAdjustmentInSeconds = calculateEquationOfTime(calendar) * 60.0
+            
+            componentsTextView.text = String.format(
+                "Calculation Components:\n" +
+                "- UTC time: %d seconds (%02d:%02d:%02d)\n" +
+                "- Longitude offset: %.1f seconds (%.1f minutes)\n" +
+                "- EoT adjustment: %.1f seconds (%.1f minutes)\n" +
+                "- Longitude factor: 1° = 240 seconds\n" +
+                "- Current longitude: %.4f°",
+                utcTimeInSeconds,
+                utcCalendar.get(Calendar.HOUR_OF_DAY),
+                utcCalendar.get(Calendar.MINUTE),
+                utcCalendar.get(Calendar.SECOND),
+                longitudeOffsetInSeconds,
+                longitudeOffsetInSeconds / 60.0,
+                eotAdjustmentInSeconds,
+                eotAdjustmentInSeconds / 60.0,
+                longitude
+            )
+        } catch (e: Exception) {
+            // If these views don't exist yet, we'll skip them
+        }
+        
         // Update location display
         updateLocationDisplay()
+    }
+    
+    private fun calculateEquationOfTime(calendar: Calendar): Double {
+        val dayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
+        val minute = calendar.get(Calendar.MINUTE)
+        val second = calendar.get(Calendar.SECOND)
+        val fractionalDay = (hour * 3600 + minute * 60 + second) / 86400.0
+        val dayDecimal = dayOfYear + fractionalDay
+        
+        val year = calendar.get(Calendar.YEAR)
+        val isLeapYear = (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0))
+        val daysInYear = if (isLeapYear) 366 else 365
+        
+        val gamma = 2.0 * PI * (dayDecimal - 1) / daysInYear
+        
+        return 229.18 * (
+                0.000075 +
+                0.001868 * cos(gamma) -
+                0.032077 * sin(gamma) -
+                0.014615 * cos(2 * gamma) -
+                0.040849 * sin(2 * gamma)
+        ) / 60.0  // Return EoT in minutes
     }
     
     override fun onDestroy() {

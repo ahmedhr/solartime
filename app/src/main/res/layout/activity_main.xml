@@ -66,51 +66,72 @@
 
         <TextView
             android:id="@+id/currentTimeTextView"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:padding="8dp"
-            android:text="Current Time"
+            android:text="Current Time: --:--:--"
+            android:textSize="18sp"
+            android:padding="12dp"
             android:textColor="@android:color/black"
-            android:textSize="24sp" />
+            android:background="@drawable/rounded_bg"
+            android:layout_marginTop="8dp"/>
 
-        <TextView
-            android:id="@+id/solarTimeTextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:padding="8dp"
-            android:text="Solar Time"
-            android:textColor="@android:color/black"
-            android:textSize="24sp" />
-            
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="16dp"
+            android:background="@drawable/rounded_bg">
+            
+            <TextView
+                android:id="@+id/solarTimeTextView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Solar Time: --:--:--"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/black"
+                android:padding="12dp"/>
+                
+            <ImageView
+                android:id="@+id/infoIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_info"
+                android:layout_marginEnd="16dp"
+                android:contentDescription="Solar time information"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/rounded_bg"
+            android:padding="12dp">
             
             <TextView
                 android:id="@+id/sunriseTextView"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:text="Sunrise: --:--"
+                android:textSize="16sp"
                 android:textColor="@android:color/black"
-                android:textSize="18sp"
-                android:padding="8dp"
-                android:drawablePadding="4dp"
-                android:layout_marginEnd="16dp" />
+                android:drawableStart="@drawable/ic_sunrise"
+                android:drawablePadding="8dp"/>
                 
             <TextView
                 android:id="@+id/sunsetTextView"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:text="Sunset: --:--"
+                android:textSize="16sp"
                 android:textColor="@android:color/black"
-                android:textSize="18sp"
-                android:padding="8dp"
-                android:drawablePadding="4dp" />
+                android:drawableStart="@drawable/ic_sunset"
+                android:drawablePadding="8dp"/>
         </LinearLayout>
     </LinearLayout>
 
