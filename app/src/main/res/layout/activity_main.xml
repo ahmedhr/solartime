@@ -83,6 +83,35 @@
             android:text="Solar Time"
             android:textColor="@android:color/black"
             android:textSize="24sp" />
+            
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="8dp">
+            
+            <TextView
+                android:id="@+id/sunriseTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sunrise: --:--"
+                android:textColor="@android:color/black"
+                android:textSize="18sp"
+                android:padding="8dp"
+                android:drawablePadding="4dp"
+                android:layout_marginEnd="16dp" />
+                
+            <TextView
+                android:id="@+id/sunsetTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sunset: --:--"
+                android:textColor="@android:color/black"
+                android:textSize="18sp"
+                android:padding="8dp"
+                android:drawablePadding="4dp" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- Latitude and Longitude -->

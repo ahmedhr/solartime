@@ -22,6 +22,8 @@ class SolarTimeDebugActivity : AppCompatActivity() {
     private lateinit var differenceTextView: TextView
     private lateinit var locationTextView: TextView
     private lateinit var dateTextView: TextView
+    private lateinit var sunriseTextView: TextView
+    private lateinit var sunsetTextView: TextView
     
     private lateinit var eastButton: Button
     private lateinit var westButton: Button
@@ -50,6 +52,8 @@ class SolarTimeDebugActivity : AppCompatActivity() {
         differenceTextView = findViewById(R.id.differenceTextView)
         locationTextView = findViewById(R.id.locationTextView)
         dateTextView = findViewById(R.id.dateTextView)
+        sunriseTextView = findViewById(R.id.sunriseTextView)
+        sunsetTextView = findViewById(R.id.sunsetTextView)
         
         eastButton = findViewById(R.id.eastButton)
         westButton = findViewById(R.id.westButton)
@@ -133,6 +137,11 @@ class SolarTimeDebugActivity : AppCompatActivity() {
             "Difference: %.2f minutes (%.2f seconds)",
             diffMinutes, diffSeconds
         )
+        
+        // Update sunrise and sunset times
+        val (sunrise, sunset) = SunCalculator.calculateSunriseSunset(currentLocation, calendar)
+        sunriseTextView.text = "Sunrise: ${SunCalculator.formatTime(sunrise)}"
+        sunsetTextView.text = "Sunset: ${SunCalculator.formatTime(sunset)}"
         
         // Update location display
         updateLocationDisplay()

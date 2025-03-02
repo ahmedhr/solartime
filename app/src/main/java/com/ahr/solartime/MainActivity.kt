@@ -46,6 +46,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var solarTimeTextView: TextView
     private lateinit var currentTimeTextView: TextView
     private lateinit var latitudeLongitudeTextView: TextView
+    private lateinit var sunriseTextView: TextView
+    private lateinit var sunsetTextView: TextView
     private lateinit var searchEditText: EditText
     private lateinit var recyclerViewPredictions: RecyclerView
     private lateinit var predictionAdapter: PredictionAdapter
@@ -78,6 +80,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         solarTimeTextView = findViewById(R.id.solarTimeTextView)
         currentTimeTextView = findViewById(R.id.currentTimeTextView)
         latitudeLongitudeTextView = findViewById(R.id.latitudeLongitudeTextView)
+        sunriseTextView = findViewById(R.id.sunriseTextView)
+        sunsetTextView = findViewById(R.id.sunsetTextView)
         searchEditText = findViewById(R.id.searchEditText)
         recyclerViewPredictions = findViewById(R.id.recyclerViewPredictions)
         recyclerViewPredictions.layoutManager = LinearLayoutManager(this)
@@ -227,15 +231,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         latitudeLongitudeTextView.text = String.format(Locale.getDefault(), "Lat: %.4f, Lon: %.4f", latitude, longitude)
 
         val calendar = Calendar.getInstance()
-        val standardTimeInSeconds = calendar.get(Calendar.HOUR_OF_DAY) * 3600 +
-                calendar.get(Calendar.MINUTE) * 60 +
-                calendar.get(Calendar.SECOND)
-
-        val longitudeOffsetInSeconds = ((longitude - referenceMeridian) / 15.0) * 3600
-        val solarTimeInSeconds = standardTimeInSeconds + longitudeOffsetInSeconds
-        val solarHours = (solarTimeInSeconds.toInt() / 3600 + 24) % 24
-        val solarMinutes = (solarTimeInSeconds.toInt() % 3600) / 60
-        val solarSeconds = solarTimeInSeconds.toInt() % 60
+        
+        // Use the more accurate solar time calculation from SolarTimeCalculator
+        val (solarHours, solarMinutes, solarSeconds) = SolarTimeCalculator.calculateSolarTime(latLng, calendar)
 
         solarTimeTextView.visibility = View.VISIBLE
         currentTimeTextView.visibility = View.VISIBLE
@@ -243,6 +241,21 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         solarTimeTextView.text = String.format(Locale.getDefault(), "Solar Time: %02d:%02d:%02d", solarHours, solarMinutes, solarSeconds)
         currentTimeTextView.text = String.format(Locale.getDefault(), "Current Time: %02d:%02d:%02d",
             calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND))
+            
+        // Calculate and display sunrise and sunset times
+        calculateAndDisplaySunriseSunset(latLng)
+    }
+    
+    private fun calculateAndDisplaySunriseSunset(latLng: LatLng) {
+        val calendar = Calendar.getInstance()
+        val (sunrise, sunset) = SunCalculator.calculateSunriseSunset(latLng, calendar)
+        
+        // Format and display the times
+        val sunriseTime = SunCalculator.formatTime(sunrise)
+        val sunsetTime = SunCalculator.formatTime(sunset)
+        
+        sunriseTextView.text = "Sunrise: $sunriseTime"
+        sunsetTextView.text = "Sunset: $sunsetTime"
     }
 
     private fun checkAndEnableLocation() {
