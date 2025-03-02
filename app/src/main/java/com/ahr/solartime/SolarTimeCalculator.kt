@@ -10,10 +10,8 @@ import kotlin.math.*
 class SolarTimeCalculator {
 
     companion object {
-        private const val REFERENCE_MERIDIAN = 82.5
         private const val TO_RAD = PI / 180.0
-        private const val TO_DEG = 180.0 / PI
-        
+
         /**
          * Calculate solar time for a given location with high precision.
          * 
@@ -27,8 +25,7 @@ class SolarTimeCalculator {
             
             // STEP 1: Convert local time to UTC
             // Get timezone offset in milliseconds
-            val timeZoneOffsetMillis = calendar.timeZone.getOffset(calendar.timeInMillis)
-            
+
             // Create a calendar in UTC time 
             val utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
             utcCalendar.timeInMillis = calendar.timeInMillis
@@ -46,7 +43,7 @@ class SolarTimeCalculator {
             val eotAdjustmentInSeconds = calculateAdvancedEquationOfTimeInSeconds(calendar)
             
             // STEP 5: Apply atmospheric refraction adjustment (small effect)
-            val refractionAdjustmentSeconds = calculateRefractionAdjustment(latitude, calendar)
+            val refractionAdjustmentSeconds = calculateRefractionAdjustment(latitude)
             
             // STEP 6: Calculate solar time in seconds by applying all adjustments to UTC time
             var solarTimeInSeconds = utcTimeInSeconds + 
@@ -104,7 +101,7 @@ class SolarTimeCalculator {
          * Calculate adjustment for atmospheric refraction (more significant near sunrise/sunset)
          * Returns adjustment in seconds
          */
-        private fun calculateRefractionAdjustment(latitude: Double, calendar: Calendar): Double {
+        private fun calculateRefractionAdjustment(latitude: Double): Double {
             // This would be based on solar elevation and atmospheric conditions
             // For simplicity, we'll use a very small constant adjustment that varies with latitude
             // In a full implementation, this would be much more complex
@@ -143,24 +140,6 @@ class SolarTimeCalculator {
             val solarSeconds = (solarTimeInSeconds % 60).toInt()
             
             return Triple(solarHours, solarMinutes, solarSeconds)
-        }
-        
-        /**
-         * Calculate the original equation of time adjustment used in the first implementation.
-         * Returns the result in seconds.
-         */
-        private fun calculateEquationOfTimeInSeconds(calendar: Calendar): Double {
-            // Get day of year
-            val dayOfYear = calendar.get(Calendar.DAY_OF_YEAR)
-            
-            // Convert to radians for the formula
-            val b = 2 * PI * (dayOfYear - 81) / 365.0
-            
-            // Spencer's formula for the Equation of Time (in minutes)
-            val eot = 9.87 * sin(2 * b) - 7.53 * cos(b) - 1.5 * sin(b)
-            
-            // Convert to seconds
-            return eot * 60.0
         }
         
         /**

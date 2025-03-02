@@ -104,27 +104,4 @@ object SunCalculator {
         val format = SimpleDateFormat("HH:mm", Locale.getDefault())
         return format.format(time.time)
     }
-    
-    /**
-     * Calculate day length in hours and minutes
-     */
-    fun getDayLength(sunrise: Calendar?, sunset: Calendar?): String {
-        if (sunrise == null || sunset == null) return "N/A"
-        
-        val dayLengthMillis = sunset.timeInMillis - sunrise.timeInMillis
-        val dayLengthHours = dayLengthMillis / (1000 * 60 * 60)
-        val dayLengthMinutes = (dayLengthMillis / (1000 * 60)) % 60
-        
-        return String.format("%dh %02dm", dayLengthHours, dayLengthMinutes)
-    }
-    
-    /**
-     * Calculate solar noon as the midpoint between sunrise and sunset
-     */
-    fun calculateSolarNoon(sunrise: Calendar?, sunset: Calendar?): Calendar? {
-        if (sunrise == null || sunset == null) return null
-        
-        val noonMillis = sunrise.timeInMillis + (sunset.timeInMillis - sunrise.timeInMillis) / 2
-        return Calendar.getInstance().apply { timeInMillis = noonMillis }
-    }
 } 
