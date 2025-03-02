@@ -15,7 +15,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.RelativeLayout
@@ -38,8 +37,6 @@ import com.google.android.libraries.places.api.model.Place // Add this import
 import com.google.android.libraries.places.api.net.FetchPlaceRequest // Add this import
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.PlacesClient
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
 import java.util.*
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -56,7 +53,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var runnable: Runnable
 
-    private val referenceMeridian = 82.5
     private lateinit var placesClient: PlacesClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,7 +72,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         initializeViews()
         initializeMap()
         initializeSearchView()
-        setupDebugButton()
         startDynamicTimeUpdates()
         checkAndEnableLocation()
     }
@@ -158,8 +153,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         placesClient.findAutocompletePredictions(request).addOnSuccessListener { response ->
             val predictions = response.autocompletePredictions
             if (predictions.isNotEmpty()) {
-                predictionAdapter.predictions = predictions
-                predictionAdapter.notifyDataSetChanged()
+                // Use DiffUtil to handle data changes efficiently
+                val oldSize = predictionAdapter.predictions.size
+                val newList = predictions.toList()
+                predictionAdapter.updatePredictions(newList)
                 recyclerViewPredictions.visibility = View.VISIBLE // Show RecyclerView
             } else {
                 recyclerViewPredictions.visibility = View.GONE // Hide if no predictions
@@ -193,9 +190,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
         placesClient.fetchPlace(request).addOnSuccessListener { response ->
             val place = response.place
+            // Use null-safe access instead of deprecated ! operator
             val latLng = place.latLng
+            val name = place.name
             if (latLng != null) {
-                updateMapWithLocation(latLng, place.name ?: "Selected Location")
+                updateMapWithLocation(latLng, name ?: "Selected Location")
             }
         }.addOnFailureListener { exception ->
             Toast.makeText(this, "Error: ${exception.message}", Toast.LENGTH_SHORT).show()
@@ -332,14 +331,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         handler.removeCallbacks(runnable)
     }
 
-    private fun setupDebugButton() {
-        val debugButton = findViewById<Button>(R.id.debugButton)
-        debugButton.setOnClickListener {
-            val intent = Intent(this, SolarTimeDebugActivity::class.java)
-            startActivity(intent)
-        }
-    }
-
     /**
      * Show a dialog explaining solar time calculation
      */
@@ -381,7 +372,11 @@ class PredictionAdapter(
 
         init {
             itemView.setOnClickListener {
-                onItemClick(predictions[adapterPosition])
+                // Replace deprecated adapterPosition with bindingAdapterPosition
+                val position = bindingAdapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    onItemClick(predictions[position])
+                }
             }
         }
     }
@@ -403,4 +398,26 @@ class PredictionAdapter(
     }
 
     override fun getItemCount(): Int = predictions.size
+    
+    // Add method to update predictions with proper notification
+    fun updatePredictions(newPredictions: List<AutocompletePrediction>) {
+        // For simplicity here, but ideally use DiffUtil for complex lists
+        val oldSize = predictions.size
+        predictions = newPredictions
+        
+        // Notify adapter about specific changes instead of full dataset
+        when {
+            oldSize == 0 -> notifyItemRangeInserted(0, newPredictions.size)
+            newPredictions.isEmpty() -> notifyItemRangeRemoved(0, oldSize)
+            oldSize < newPredictions.size -> {
+                notifyItemRangeChanged(0, oldSize)
+                notifyItemRangeInserted(oldSize, newPredictions.size - oldSize)
+            }
+            oldSize > newPredictions.size -> {
+                notifyItemRangeChanged(0, newPredictions.size)
+                notifyItemRangeRemoved(newPredictions.size, oldSize - newPredictions.size)
+            }
+            else -> notifyItemRangeChanged(0, newPredictions.size)
+        }
+    }
 }
