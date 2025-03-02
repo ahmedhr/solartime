@@ -97,17 +97,33 @@
             android:id="@+id/accurateSolarTimeTextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Accurate Solar Time: 12:00:00"
-            android:textSize="18sp"
-            android:layout_marginBottom="8dp" />
+            android:layout_marginTop="4dp"
+            android:text="Accurate Solar Time: 00:00:00"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/highPrecisionSolarTimeTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="High Precision Solar Time: 00:00:00"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/ultraPrecisionSolarTimeTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Ultra Precision Solar Time: 00:00:00"
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/differenceTextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:text="Difference: 0.00 minutes (0.00 seconds)"
-            android:textSize="18sp"
-            android:layout_marginBottom="16dp" />
+            android:textSize="16sp" />
             
         <LinearLayout
             android:layout_width="match_parent"

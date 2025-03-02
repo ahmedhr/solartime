@@ -6,6 +6,7 @@ import android.os.Looper
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.maps.model.LatLng
 import java.text.SimpleDateFormat
@@ -21,6 +22,8 @@ class SolarTimeDebugActivity : AppCompatActivity() {
     private lateinit var currentTimeTextView: TextView
     private lateinit var simpleSolarTimeTextView: TextView
     private lateinit var accurateSolarTimeTextView: TextView
+    private lateinit var highPrecisionSolarTimeTextView: TextView
+    private lateinit var ultraPrecisionSolarTimeTextView: TextView
     private lateinit var differenceTextView: TextView
     private lateinit var locationTextView: TextView
     private lateinit var dateTextView: TextView
@@ -57,6 +60,8 @@ class SolarTimeDebugActivity : AppCompatActivity() {
         currentTimeTextView = findViewById(R.id.currentTimeTextView)
         simpleSolarTimeTextView = findViewById(R.id.simpleSolarTimeTextView)
         accurateSolarTimeTextView = findViewById(R.id.accurateSolarTimeTextView)
+        highPrecisionSolarTimeTextView = findViewById(R.id.highPrecisionSolarTimeTextView)
+        ultraPrecisionSolarTimeTextView = findViewById(R.id.ultraPrecisionSolarTimeTextView)
         differenceTextView = findViewById(R.id.differenceTextView)
         locationTextView = findViewById(R.id.locationTextView)
         dateTextView = findViewById(R.id.dateTextView)
@@ -142,32 +147,52 @@ class SolarTimeDebugActivity : AppCompatActivity() {
         val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
         currentTimeTextView.text = "Current Time: ${timeFormat.format(calendar.time)}"
         
-        // Update simple solar time
-        val (simpleHours, simpleMinutes, simpleSeconds) = 
-            SolarTimeCalculator.calculateSimplifiedSolarTime(currentLocation, calendar)
-        simpleSolarTimeTextView.text = String.format(
-            Locale.getDefault(),
-            "Simple Solar Time: %02d:%02d:%02d",
-            simpleHours, simpleMinutes, simpleSeconds
-        )
-        
-        // Update accurate solar time
-        val (accurateHours, accurateMinutes, accurateSeconds) = 
-            SolarTimeCalculator.calculateSolarTime(currentLocation, calendar)
-        accurateSolarTimeTextView.text = String.format(
-            Locale.getDefault(),
-            "Accurate Solar Time: %02d:%02d:%02d",
-            accurateHours, accurateMinutes, accurateSeconds
-        )
-        
-        // Update difference
-        val diffSeconds = SolarTimeCalculator.getTimeDifferenceInSeconds(currentLocation, calendar)
-        val diffMinutes = diffSeconds / 60.0
-        differenceTextView.text = String.format(
-            Locale.getDefault(),
-            "Difference: %.2f minutes (%.2f seconds)",
-            diffMinutes, diffSeconds
-        )
+        try {
+            // Update simple solar time
+            val simpleSolarTime: Triple<Int, Int, Int> = SolarTimeCalculator.calculateSimplifiedSolarTime(currentLocation, calendar)
+            simpleSolarTimeTextView.text = String.format(
+                Locale.getDefault(),
+                "Simple Solar Time: %02d:%02d:%02d",
+                simpleSolarTime.first, simpleSolarTime.second, simpleSolarTime.third
+            )
+            
+            // Update accurate solar time
+            val accurateSolarTime: Triple<Int, Int, Int> = SolarTimeCalculator.calculateSolarTime(currentLocation, calendar)
+            accurateSolarTimeTextView.text = String.format(
+                Locale.getDefault(),
+                "Accurate Solar Time: %02d:%02d:%02d",
+                accurateSolarTime.first, accurateSolarTime.second, accurateSolarTime.third
+            )
+            
+            // Update high precision solar time
+            val highPrecisionSolarTime: Triple<Int, Int, Int> = HighPrecisionSolarTimeCalculator.calculateHighPrecisionSolarTime(currentLocation, calendar)
+            highPrecisionSolarTimeTextView.text = String.format(
+                Locale.getDefault(),
+                "High Precision Solar Time: %02d:%02d:%02d",
+                highPrecisionSolarTime.first, highPrecisionSolarTime.second, highPrecisionSolarTime.third
+            )
+            
+            // Update ultra precision solar time
+            val ultraPrecisionSolarTime: Triple<Int, Int, Int> = UltraPrecisionSolarTimeCalculator.calculateUltraPrecisionSolarTime(currentLocation, calendar)
+            ultraPrecisionSolarTimeTextView.text = String.format(
+                Locale.getDefault(),
+                "Ultra Precision Solar Time: %02d:%02d:%02d",
+                ultraPrecisionSolarTime.first, ultraPrecisionSolarTime.second, ultraPrecisionSolarTime.third
+            )
+            
+            // Update difference
+            val diffSeconds = SolarTimeCalculator.getTimeDifferenceInSeconds(currentLocation, calendar)
+            val diffMinutes = diffSeconds / 60.0
+            differenceTextView.text = String.format(
+                Locale.getDefault(),
+                "Difference: %.2f minutes (%.2f seconds)",
+                diffMinutes, diffSeconds
+            )
+        } catch (e: Exception) {
+            // Handle any calculation errors gracefully
+            e.printStackTrace()
+            Toast.makeText(this, "Error in calculations: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
         
         // Update sunrise and sunset times
         val (sunrise, sunset) = SunCalculator.calculateSunriseSunset(currentLocation, calendar)

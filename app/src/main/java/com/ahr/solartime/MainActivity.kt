@@ -66,6 +66,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private val searchHandler = Handler(Looper.getMainLooper())
     private lateinit var timeUpdateRunnable: Runnable
 
+    // Add currentLocation variable
+    private var currentLocation: LatLng? = null
+    private var selectedPrecisionLevel = SolarTimeUtil.PRECISION_ULTRA
+
     /**
      * Called when the activity is first created.
      * Initializes the UI, map, Places API, and location services.
@@ -272,16 +276,21 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val latitude = latLng.latitude
         val longitude = latLng.longitude
 
+        // Store the current location for use in dialogs
+        currentLocation = latLng
+
         latitudeLongitudeTextView.text =
             String.format(Locale.getDefault(), "Lat: %.4f, Lon: %.4f", latitude, longitude)
 
         val calendar = Calendar.getInstance()
 
-        // Use the more accurate solar time calculation from SolarTimeCalculator
-        val (solarHours, solarMinutes, solarSeconds) = SolarTimeCalculator.calculateSolarTime(
+        // Use the SolarTimeUtil to calculate solar time with the selected precision level
+        val solarTime = SolarTimeUtil.calculateSolarTime(
             latLng,
-            calendar
+            calendar,
+            selectedPrecisionLevel
         )
+        val (solarHours, solarMinutes, solarSeconds) = solarTime
 
         solarTimeTextView.visibility = View.VISIBLE
         currentTimeTextView.visibility = View.VISIBLE
@@ -389,9 +398,17 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             • Equation of Time (EoT) - adjusts for Earth's elliptical orbit and axial tilt
             • Time zone offset - converts from UTC to local time
             • Atmospheric refraction - tiny adjustment for atmospheric effects
+            • Delta T corrections - accounts for Earth's varying rotation (Ultra mode)
+            • Relativistic effects - light-travel time and gravitational effects (Ultra mode)
+            • Advanced planetary positions - using VSOP2013-like precision (Ultra mode)
+            
+            This app implements three precision levels:
+            • Standard: Basic solar time calculation
+            • High Precision: Advanced astronomical algorithm
+            • Ultra Precision: Observatory-grade calculations
             
             Formula: 
-            Standard time + longitude adjustment + EoT + time zone adjustment
+            Standard time + longitude adjustment + EoT + atmospheric/relativistic corrections
             
             Solar noon occurs when the sun reaches its highest point in the sky.
         """.trimIndent()
@@ -412,7 +429,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 // Search action is handled by the SearchView
                 true
             }
-
+            R.id.action_precision -> {
+                showPrecisionLevelDialog()
+                true
+            }
+            R.id.action_debug -> {
+                showDebugInfoDialog()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -421,7 +445,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
      * Creates the options menu and sets up the search functionality.
      * Configures the SearchView with custom styling and debounced search.
      */
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
 
         // Find the search item and configure it
@@ -514,6 +538,73 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         })
 
         return true
+    }
+
+    /**
+     * Shows a dialog to select the solar time precision level.
+     */
+    private fun showPrecisionLevelDialog() {
+        val dialogBuilder = AlertDialog.Builder(this)
+        dialogBuilder.setTitle("Select Precision Level")
+
+        val precisionOptions = arrayOf(
+            "Standard - Basic calculation",
+            "High Precision - Advanced algorithm",
+            "Ultra Precision - Observatory-grade"
+        )
+        
+        // Pre-select the current precision level
+        val currentSelection = selectedPrecisionLevel
+
+        // Add debug information to the dialog
+        val debugInfo = currentLocation?.let {
+            SolarTimeUtil.getSolarTimeDebugInfo(it, Calendar.getInstance())
+        } ?: "Location not selected"
+
+        val message = "Current calculation details:\n\n$debugInfo"
+        dialogBuilder.setMessage(message)
+
+        dialogBuilder.setSingleChoiceItems(precisionOptions, currentSelection) { dialog, which ->
+            selectedPrecisionLevel = which
+            dialog.dismiss()
+            
+            // Recalculate solar time with the new precision level
+            currentLocation?.let { 
+                calculateAndDisplaySolarTime(it)
+                
+                // Show a toast to confirm the change
+                val precisionName = when (selectedPrecisionLevel) {
+                    SolarTimeUtil.PRECISION_STANDARD -> "Standard"
+                    SolarTimeUtil.PRECISION_HIGH -> "High Precision"
+                    SolarTimeUtil.PRECISION_ULTRA -> "Ultra Precision"
+                    else -> "Unknown"
+                }
+                Toast.makeText(this, "Using $precisionName calculation", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        dialogBuilder.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+
+        val dialog = dialogBuilder.create()
+        dialog.show()
+    }
+
+    /**
+     * Shows a dialog with detailed debug information about the solar time calculation
+     */
+    private fun showDebugInfoDialog() {
+        val dialogBuilder = AlertDialog.Builder(this)
+        dialogBuilder.setTitle("Solar Time Debug Information")
+        
+        val debugInfo = currentLocation?.let {
+            SolarTimeUtil.getSolarTimeDebugInfo(it, Calendar.getInstance())
+        } ?: "Location not selected"
+        
+        dialogBuilder.setMessage(debugInfo)
+        dialogBuilder.setPositiveButton("Close") { dialog, _ -> dialog.dismiss() }
+        
+        val dialog = dialogBuilder.create()
+        dialog.show()
     }
 }
 
