@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white">
+
+    <!-- Search Bar (Floating) -->
+    <RelativeLayout
+        android:id="@+id/searchContainer"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="12dp"
+        android:elevation="6dp"
+        android:background="@drawable/search_bar_background"
+        android:padding="8dp">
+
+        <EditText
+            android:id="@+id/searchEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Search..."
+            android:textSize="16sp"
+            android:padding="10dp"
+            android:background="@null"
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:textColor="@android:color/black"
+            android:textColorHint="@android:color/darker_gray"
+            android:importantForAutofill="yes"
+            android:autofillHints="address"/>
+    </RelativeLayout>
+
+    <!-- RecyclerView for Autocomplete Predictions -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewPredictions"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/searchContainer"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/dropdown_background"
+        android:clipToPadding="false"
+        android:elevation="8dp"
+        android:padding="8dp"
+        android:visibility="gone" />
+
+    <!-- Google Map Fragment -->
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/searchContainer"/>
+
+    <!-- Current Time and Solar Time -->
+    <LinearLayout
+        android:id="@+id/timeLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@android:color/white"
+        android:elevation="4dp"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/currentTimeTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:padding="8dp"
+            android:text="Current Time"
+            android:textColor="@android:color/black"
+            android:textSize="24sp" />
+
+        <TextView
+            android:id="@+id/solarTimeTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:padding="8dp"
+            android:text="Solar Time"
+            android:textColor="@android:color/black"
+            android:textSize="24sp" />
+    </LinearLayout>
+
+    <!-- Latitude and Longitude -->
+    <TextView
+        android:id="@+id/latitudeLongitudeTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/timeLayout"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="16dp"
+        android:background="@android:color/white"
+        android:elevation="4dp"
+        android:padding="8dp"
+        android:text="Lat: 0.0000, Lon: 0.0000"
+        android:textColor="@android:color/black"
+        android:textSize="18sp" />
+        
+    <!-- Debug Button -->
+    <Button
+        android:id="@+id/debugButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentTop="true"
+        android:layout_margin="8dp"
+        android:text="Debug"
+        android:textSize="12sp"
+        android:alpha="0.7"
+        android:background="@android:color/darker_gray"
+        android:textColor="@android:color/white"
+        android:padding="8dp" />
+
+</RelativeLayout>

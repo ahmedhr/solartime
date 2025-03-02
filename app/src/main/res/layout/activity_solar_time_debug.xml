@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/titleTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Solar Time Debug"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:id="@+id/dateTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Date: 2023-01-01"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/locationTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Location: Lat: 0.00, Lon: 82.50"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="16dp">
+
+        <Button
+            android:id="@+id/northButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="North"
+            android:layout_margin="4dp" />
+
+        <Button
+            android:id="@+id/southButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="South"
+            android:layout_margin="4dp" />
+
+        <Button
+            android:id="@+id/eastButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="East"
+            android:layout_margin="4dp" />
+
+        <Button
+            android:id="@+id/westButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="West"
+            android:layout_margin="4dp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#CCCCCC"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:id="@+id/currentTimeTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Current Time: 12:00:00"
+        android:textSize="18sp"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/simpleSolarTimeTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Simple Solar Time: 12:00:00"
+        android:textSize="18sp"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/accurateSolarTimeTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Accurate Solar Time: 12:00:00"
+        android:textSize="18sp"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/differenceTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Difference: 0.00 minutes (0.00 seconds)"
+        android:textSize="18sp"
+        android:layout_marginBottom="16dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#CCCCCC"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Explanation:"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Simple Solar Time: Uses only longitude to calculate solar time.\n\nAccurate Solar Time: Includes the Equation of Time adjustment, which accounts for Earth's elliptical orbit and axial tilt."
+        android:textSize="14sp" />
+
+</LinearLayout> 
