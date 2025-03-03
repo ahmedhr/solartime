@@ -554,7 +554,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         )
         
         // Pre-select the current precision level
-        val currentSelection = selectedPrecisionLevel
+        val currentSelection = when(selectedPrecisionLevel) {
+            SolarTimeUtil.PRECISION_STANDARD -> 0
+            SolarTimeUtil.PRECISION_HIGH -> 1
+            SolarTimeUtil.PRECISION_ULTRA -> 2
+            else -> 2 // Default to ultra
+        }
 
         // Add debug information to the dialog
         val debugInfo = currentLocation?.let {
@@ -565,22 +570,24 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         dialogBuilder.setMessage(message)
 
         dialogBuilder.setSingleChoiceItems(precisionOptions, currentSelection) { dialog, which ->
-            selectedPrecisionLevel = which
-            dialog.dismiss()
+            // Convert dialog selection to precision constant
+            selectedPrecisionLevel = when(which) {
+                0 -> SolarTimeUtil.PRECISION_STANDARD
+                1 -> SolarTimeUtil.PRECISION_HIGH
+                2 -> SolarTimeUtil.PRECISION_ULTRA
+                else -> SolarTimeUtil.PRECISION_ULTRA
+            }
             
             // Recalculate solar time with the new precision level
             currentLocation?.let { 
                 calculateAndDisplaySolarTime(it)
                 
                 // Show a toast to confirm the change
-                val precisionName = when (selectedPrecisionLevel) {
-                    SolarTimeUtil.PRECISION_STANDARD -> "Standard"
-                    SolarTimeUtil.PRECISION_HIGH -> "High Precision"
-                    SolarTimeUtil.PRECISION_ULTRA -> "Ultra Precision"
-                    else -> "Unknown"
-                }
+                val precisionName = SolarTimeUtil.getPrecisionName(selectedPrecisionLevel)
                 Toast.makeText(this, "Using $precisionName calculation", Toast.LENGTH_SHORT).show()
             }
+            
+            dialog.dismiss()
         }
 
         dialogBuilder.setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }

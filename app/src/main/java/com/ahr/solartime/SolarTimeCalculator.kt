@@ -37,10 +37,11 @@ object SolarTimeCalculator {
         // Calculate longitude correction (4 minutes per degree = 240 seconds per degree)
         // If you're east of standard meridian, solar time is ahead (positive correction)
         // If you're west of standard meridian, solar time is behind (negative correction)
-        val longitudeCorrection = (longitude - standardMeridian) * 240
+        val longitudeDifference = longitude - standardMeridian
+        val longitudeCorrection = longitudeDifference * 240
         
         // Calculate solar time in seconds
-        var solarTimeInSeconds = (localTimeInSeconds + longitudeCorrection).toInt()
+        var solarTimeInSeconds = localTimeInSeconds + longitudeCorrection.toInt()
         
         // Normalize to 24 hours
         while (solarTimeInSeconds < 0) solarTimeInSeconds += 86400
@@ -82,13 +83,14 @@ object SolarTimeCalculator {
         // Calculate longitude correction (4 minutes per degree = 240 seconds per degree)
         // If you're east of standard meridian, solar time is ahead (positive correction)
         // If you're west of standard meridian, solar time is behind (negative correction)
-        val longitudeCorrection = (longitude - standardMeridian) * 240
+        val longitudeDifference = longitude - standardMeridian
+        val longitudeCorrection = longitudeDifference * 240
         
         // Calculate equation of time correction in seconds
         val eotCorrection = calculateEquationOfTime(calendar) * 60
         
         // Calculate solar time in seconds from local time
-        var solarTimeInSeconds = (localTimeInSeconds + longitudeCorrection + eotCorrection).toInt()
+        var solarTimeInSeconds = localTimeInSeconds + longitudeCorrection.toInt() + eotCorrection.toInt()
         
         // Normalize to 24 hours
         while (solarTimeInSeconds < 0) solarTimeInSeconds += 86400
@@ -203,7 +205,8 @@ class HighPrecisionSolarTimeCalculator {
             // The correction is 4 minutes (240 seconds) per degree difference from standard meridian
             // If you're east of standard meridian, solar time is ahead (positive correction)
             // If you're west of standard meridian, solar time is behind (negative correction)
-            val longitudeCorrection = (longitude - standardMeridian) * 240.0
+            val longitudeDifference = longitude - standardMeridian
+            val longitudeCorrection = longitudeDifference * 240.0
             
             // STEP 5: Calculate high-precision equation of time adjustment in seconds
             val eotAdjustmentInSeconds = calculateHighPrecisionEoT(jd)
@@ -484,7 +487,8 @@ class UltraPrecisionSolarTimeCalculator {
             // STEP 6: Calculate longitude correction with ultra-high precision
             // If you're east of standard meridian, solar time is ahead (positive correction)
             // If you're west of standard meridian, solar time is behind (negative correction)
-            val longitudeCorrection = (longitude - standardMeridian) * 240.0
+            val longitudeDifference = longitude - standardMeridian
+            val longitudeCorrection = longitudeDifference * 240.0
             
             // STEP 7: Calculate ultra-precise equation of time adjustment in seconds
             val eotAdjustmentInSeconds = calculateUltraPrecisionEoT(jdTT)

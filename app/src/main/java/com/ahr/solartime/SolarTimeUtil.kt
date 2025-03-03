@@ -44,6 +44,23 @@ object SolarTimeUtil {
     }
 
     /**
+     * Format solar time components into a string
+     * 
+     * @param solarTime Triple of (hours, minutes, seconds)
+     * @return Formatted time string in HH:MM:SS format
+     */
+    fun formatSolarTime(solarTime: Triple<Int, Int, Int>): String {
+        val (hours, minutes, seconds) = solarTime
+        return String.format(
+            Locale.getDefault(),
+            "%02d:%02d:%02d",
+            hours,
+            minutes,
+            seconds
+        )
+    }
+
+    /**
      * Convenience method to get formatted solar time string
      * 
      * @param latLng The location coordinates
@@ -56,14 +73,8 @@ object SolarTimeUtil {
         calendar: Calendar,
         precision: Int = PRECISION_ULTRA
     ): String {
-        val (hours, minutes, seconds) = calculateSolarTime(latLng, calendar, precision)
-        return String.format(
-            Locale.getDefault(),
-            "%02d:%02d:%02d",
-            hours,
-            minutes,
-            seconds
-        )
+        val solarTime = calculateSolarTime(latLng, calendar, precision)
+        return formatSolarTime(solarTime)
     }
 
     /**
@@ -93,6 +104,7 @@ object SolarTimeUtil {
         calendar: Calendar
     ): String {
         val longitude = latLng.longitude
+        val latitude = latLng.latitude
         val tzOffset = calendar.timeZone.getOffset(calendar.timeInMillis) / (1000.0 * 60 * 60)
         val standardMeridian = 15.0 * tzOffset
         
@@ -104,25 +116,41 @@ object SolarTimeUtil {
             calendar.get(Calendar.SECOND)
         )
         
-        val longitudeCorrection = (longitude - standardMeridian) * 240 // seconds
-        val eotCorrection = SolarTimeCalculator.calculateEquationOfTime(calendar) * 60 // seconds
+        val longitudeDifference = longitude - standardMeridian
+        val longitudeCorrection = longitudeDifference * 4.0 // minutes (4 minutes per degree)
+        val eotCorrection = SolarTimeCalculator.calculateEquationOfTime(calendar) // minutes
         
-        val longitudeCorrectionMinutes = longitudeCorrection / 60.0
-        val eotCorrectionMinutes = eotCorrection / 60.0
-        
-        val totalCorrection = (longitudeCorrection + eotCorrection) / 60.0 // minutes
+        val totalCorrection = longitudeCorrection + eotCorrection // minutes
         
         val sb = StringBuilder()
         sb.append("Solar Time Debug Info:\n")
         sb.append("---------------------\n")
         sb.append("Local Time: $localTime\n")
         sb.append("Timezone: GMT${if (tzOffset >= 0) "+" else ""}$tzOffset\n")
-        sb.append("Location: ${latLng.latitude}°, ${latLng.longitude}°\n")
+        sb.append("Location: ${latitude}°, ${longitude}°\n")
         sb.append("Standard Meridian: ${standardMeridian}°\n")
-        sb.append("Longitude Diff: ${longitude - standardMeridian}°\n")
-        sb.append("Longitude Correction: ${String.format("%.2f", longitudeCorrectionMinutes)} minutes\n")
-        sb.append("Equation of Time: ${String.format("%.2f", eotCorrectionMinutes)} minutes\n")
+        sb.append("Longitude Diff: ${String.format("%.2f", longitudeDifference)}°\n")
+        sb.append("Longitude Correction: ${String.format("%.2f", longitudeCorrection)} minutes\n")
+        sb.append("Equation of Time: ${String.format("%.2f", eotCorrection)} minutes\n")
         sb.append("Total Correction: ${String.format("%.2f", totalCorrection)} minutes\n")
+        
+        // Calculate expected solar time
+        val localTimeSeconds = calendar.get(Calendar.HOUR_OF_DAY) * 3600 + 
+                              calendar.get(Calendar.MINUTE) * 60 + 
+                              calendar.get(Calendar.SECOND)
+        
+        val correctionSeconds = (totalCorrection * 60).toInt()
+        var solarTimeSeconds = localTimeSeconds + correctionSeconds
+        
+        // Normalize
+        while (solarTimeSeconds < 0) solarTimeSeconds += 86400
+        while (solarTimeSeconds >= 86400) solarTimeSeconds -= 86400
+        
+        val solarHours = solarTimeSeconds / 3600
+        val solarMinutes = (solarTimeSeconds % 3600) / 60
+        val solarSeconds = solarTimeSeconds % 60
+        
+        sb.append("Expected Solar Time: ${String.format("%02d:%02d:%02d", solarHours, solarMinutes, solarSeconds)}\n")
         
         return sb.toString()
     }
