@@ -9,8 +9,6 @@ import kotlin.math.*
  * Provides standard implementations and utilities for solar time calculations.
  */
 object SolarTimeCalculator {
-    private const val TO_RAD = PI / 180.0
-    private const val TO_DEG = 180.0 / PI
 
     /**
      * Calculate simplified solar time based on longitude only

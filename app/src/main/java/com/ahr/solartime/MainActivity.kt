@@ -16,6 +16,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.RadioButton
+import android.widget.RadioGroup
+import android.widget.Space
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -566,12 +570,45 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             SolarTimeUtil.getSolarTimeDebugInfo(it, Calendar.getInstance())
         } ?: "Location not selected"
 
-        val message = "Current calculation details:\n\n$debugInfo"
-        dialogBuilder.setMessage(message)
+        // Create a vertical layout to hold both radio buttons and debug info
+        val layout = LinearLayout(this)
+        layout.orientation = LinearLayout.VERTICAL
+        layout.setPadding(32, 16, 32, 16)
 
-        dialogBuilder.setSingleChoiceItems(precisionOptions, currentSelection) { dialog, which ->
+        // Create RadioGroup for precision options
+        val radioGroup = RadioGroup(this)
+        radioGroup.orientation = RadioGroup.VERTICAL
+        
+        // Add radio buttons
+        precisionOptions.forEachIndexed { index, text ->
+            val radioButton = RadioButton(this)
+            radioButton.text = text
+            radioButton.id = index
+            radioButton.isChecked = index == currentSelection
+            radioGroup.addView(radioButton)
+        }
+        
+        // Add spacing between radio group and debug info
+        val space = Space(this)
+        space.minimumHeight = 16
+
+        // Create TextView for debug info
+        val debugTextView = TextView(this)
+        debugTextView.text = debugInfo
+        debugTextView.setTextIsSelectable(true)
+        
+        // Add views to layout
+        layout.addView(radioGroup)
+        layout.addView(space)
+        layout.addView(debugTextView)
+
+        // Set the custom layout to the dialog
+        dialogBuilder.setView(layout)
+
+        dialogBuilder.setPositiveButton("Apply") { dialog, _ ->
+            val selectedId = radioGroup.checkedRadioButtonId
             // Convert dialog selection to precision constant
-            selectedPrecisionLevel = when(which) {
+            selectedPrecisionLevel = when(selectedId) {
                 0 -> SolarTimeUtil.PRECISION_STANDARD
                 1 -> SolarTimeUtil.PRECISION_HIGH
                 2 -> SolarTimeUtil.PRECISION_ULTRA
